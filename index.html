@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Speech Emotion Recognition</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      background-color: #f4f4f9;
+    }
+    .container {
+      background: #fff;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      width: 400px;
+      text-align: center;
+    }
+    input[type="file"],
+    input[type="text"] {
+      margin-bottom: 10px;
+      width: 100%;
+      padding: 8px;
+      border-radius: 4px;
+      border: 1px solid #ddd;
+    }
+    button {
+      background-color: #007bff;
+      color: #fff;
+      border: none;
+      padding: 10px 15px;
+      border-radius: 4px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #0056b3;
+    }
+    .output {
+      margin-top: 15px;
+      padding: 10px;
+      background-color: #f9f9f9;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      white-space: pre-wrap;
+      font-size: 14px;
+      color: #333;
+    }
+    .note {
+      font-size: 14px;
+      color: #555;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>Speech Emotion Recognition</h2>
+    <label for="apiKey">Hugging Face API Key:</label>
+    <input type="text" id="apiKey" placeholder="Enter your Hugging Face API Key">
+    <p class="note">Don't have an API key? <a href="https://huggingface.co/signup" target="_blank">Sign up here</a>.</p>
+    <input type="file" id="audioFile" accept=".wav,.mp3,.flac">
+    <button id="analyzeBtn">Analyze Emotion</button>
+    <div class="output" id="output">Upload an audio file to analyze emotions.</div>
+  </div>
+
+  <script>
+    document.getElementById('analyzeBtn').addEventListener('click', async () => {
+      const fileInput = document.getElementById('audioFile');
+      const outputDiv = document.getElementById('output');
+      const apiKeyInput = document.getElementById('apiKey').value;
+  
+      if (!apiKeyInput) {
+        outputDiv.textContent = 'Please enter your Hugging Face API key.';
+        return;
+      }
+  
+      if (!fileInput.files.length) {
+        outputDiv.textContent = 'Please upload an audio file first.';
+        return;
+      }
+  
+      const file = fileInput.files[0];
+  
+      const analyzeEmotion = async () => {
+        try {
+          const response = await fetch(
+            "https://api-inference.huggingface.co/models/ehcalabres/wav2vec2-lg-xlsr-en-speech-emotion-recognition",
+            {
+              headers: {
+                Authorization: `Bearer ${apiKeyInput}`, // Use the user-provided API key
+              },
+              method: "POST",
+              body: file,
+            }
+          );
+  
+          const result = await response.json();
+  
+          if (result.error === "Model ehcalabres/wav2vec2-lg-xlsr-en-speech-emotion-recognition is currently loading") {
+            const estimatedTime = Math.ceil(result.estimated_time);
+            outputDiv.textContent = `Model is currently loading. Retrying in ${estimatedTime} seconds...`;
+            setTimeout(analyzeEmotion, estimatedTime * 1000);
+          } else {
+            outputDiv.textContent = JSON.stringify(result, null, 2);
+          }
+        } catch (error) {
+          outputDiv.textContent = `Error: ${error.message}`;
+        }
+      };
+  
+      outputDiv.textContent = 'Analyzing...';
+      analyzeEmotion();
+    });
+  </script>
+  
+</body>
+</html>
